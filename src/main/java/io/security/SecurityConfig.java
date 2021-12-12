@@ -4,6 +4,7 @@ import java.io.IOException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -12,6 +13,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.security.web.authentication.logout.LogoutHandler;
+import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 
 @Configuration
 @EnableWebSecurity
@@ -47,7 +50,27 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             System.out.println("exception"+exception.getMessage());
           }
         })
-        .permitAll()
-    ;
+        .permitAll();
+    http
+        .logout()
+        .logoutUrl("/logout")
+        .logoutSuccessUrl("/login")
+        .addLogoutHandler(new LogoutHandler() {
+          @Override
+          public void logout(HttpServletRequest request, HttpServletResponse response,
+              Authentication authentication) {
+            HttpSession session = request.getSession();
+            session.invalidate();
+            // SecurityContextLogoutHandler 에서 seeeon 무효화 해주기 때문에 필요없음.
+          }
+        })
+        .logoutSuccessHandler(new LogoutSuccessHandler() {  // logout 성공한 후 로직
+          @Override
+          public void onLogoutSuccess(HttpServletRequest request, HttpServletResponse response,
+              Authentication authentication) throws IOException, ServletException {
+            response.sendRedirect("/login");
+          }
+        })
+        .deleteCookies("remember-me");
   }
 }
