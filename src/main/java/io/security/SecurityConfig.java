@@ -24,13 +24,13 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         .anyRequest().authenticated();
     http  // 인증
         .formLogin()
-        //.loginPage("/loginPage")
-        .defaultSuccessUrl("/")
-        .failureUrl("/login")
-        .usernameParameter("userId")
-        .passwordParameter("passwd")
-        .loginProcessingUrl("/login_proc")
-        .successHandler(new AuthenticationSuccessHandler() {
+        //.loginPage("/loginPage")  // 사용자 정의 로그인 페이지
+        .defaultSuccessUrl("/") // 로그인 성공 후 이동 페이지
+        .failureUrl("/login") // 로그인 실패 후 이동 페이지
+        .usernameParameter("userId")  // 아이디 파라미터명 설정
+        .passwordParameter("passwd")  // 패스워드 파라미터명 설정
+        .loginProcessingUrl("/login_proc")  // 로그인 Form Action Url
+        .successHandler(new AuthenticationSuccessHandler() {  // 로그인 성공 후 핸들러
           @Override
           public void onAuthenticationSuccess(HttpServletRequest request,
               HttpServletResponse response, Authentication authentication)
@@ -39,7 +39,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             response.sendRedirect("/");
           }
         })
-        .failureHandler(new AuthenticationFailureHandler() {
+        .failureHandler(new AuthenticationFailureHandler() {  // 로그인 실패 후 핸들러
           @Override
           public void onAuthenticationFailure(HttpServletRequest request,
               HttpServletResponse response, AuthenticationException exception)
