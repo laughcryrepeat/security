@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -43,7 +44,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
           public void onAuthenticationSuccess(HttpServletRequest request,
               HttpServletResponse response, Authentication authentication)
               throws IOException, ServletException {
-            System.out.printf("authentication"+authentication.getName());
+            System.out.printf("authentication" + authentication.getName());
             response.sendRedirect("/");
           }
         })
@@ -52,7 +53,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
           public void onAuthenticationFailure(HttpServletRequest request,
               HttpServletResponse response, AuthenticationException exception)
               throws IOException, ServletException {
-            System.out.println("exception"+exception.getMessage());
+            System.out.println("exception" + exception.getMessage());
           }
         })
         .permitAll();
@@ -66,7 +67,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
               Authentication authentication) {
             HttpSession session = request.getSession();
             session.invalidate();
-            // SecurityContextLogoutHandler 에서 seeeon 무효화 해주기 때문에 필요없음.
+            // SecurityContextLogoutHandler 에서 seeeon 무효화 해주기 때문에 위 로직은 필요없음.
           }
         })
         .logoutSuccessHandler(new LogoutSuccessHandler() {  // logout 성공한 후 로직
@@ -78,10 +79,17 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         })
         .deleteCookies("remember-me");
     http
-        .rememberMe()
+        .rememberMe() // 관련 필터 :
         .rememberMeParameter("remember")  // 기본 파라미터명은 remember-me
         .tokenValiditySeconds(3600) // Default는 14일
         //.alwaysRemember(true) // 리멤버미 기능이 활성화되지 않아도 항상 실행. 대체로 설정x
         .userDetailsService(userDerailsService);
+    http
+        .sessionManagement()  // 세션 관리 기능. 관련 필터 : SessionManagementFilter, ConcurrentSessionFilter
+        .sessionCreationPolicy(SessionCreationPolicy.ALWAYS)  // Always: 항상 생성, If_Required: 필요시 생성(default), Never: 생성하지 않으나 존재하면 사용, Stateless: 사용안함. jwt 사용할 경우 선택
+        .sessionFixation().changeSessionId()  // servelet 3.x 이상 changeSessionId: 기본값, none : 세션 새로설정 안함, servelet 3.x 미만 migrateSession: 세션 새로 생성함, newSession : 이전 세션에서 설정한 속성을 사용하지 못함
+        .maximumSessions(1) // 최대허용 가능 세션 수 , -1: 무제한 로그인 세션 허용
+        .maxSessionsPreventsLogin(true) // true: 동시 로그인 차단함. false:기존 세션 만료(default)
+        .expiredUrl("/expired"); // 세션이 만료된 경우 이동 할 페이지
   }
 }
