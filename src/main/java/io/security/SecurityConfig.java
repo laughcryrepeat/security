@@ -7,6 +7,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -15,10 +16,15 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
+import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
+import org.springframework.security.web.savedrequest.RequestCache;
+import org.springframework.security.web.savedrequest.SavedRequest;
 
 @Configuration
 @EnableWebSecurity
@@ -37,6 +43,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
   protected void configure(HttpSecurity http) throws Exception {
     http  // 인가
         .authorizeRequests()
+        .antMatchers("/login").permitAll()
         .antMatchers("/user").hasRole("USER")
         .antMatchers("/admin/pay").hasRole("ADMIN")
         .antMatchers("/admin/**").access("hasRole('ADMIN') or hasRole('SYS')")
@@ -54,8 +61,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
           public void onAuthenticationSuccess(HttpServletRequest request,
               HttpServletResponse response, Authentication authentication)
               throws IOException, ServletException {
-            System.out.printf("authentication" + authentication.getName());
-            response.sendRedirect("/");
+            RequestCache requestCache = new HttpSessionRequestCache();
+            SavedRequest savedRequest = requestCache.getRequest(request, response);
+            String redirectUrl = savedRequest.getRedirectUrl();
+            response.sendRedirect(redirectUrl);  // 인증 성공 후 세션에 담아둔 이전 요청 정보로 이동.
           }
         })
         .failureHandler(new AuthenticationFailureHandler() {  // 로그인 실패 후 핸들러
@@ -101,5 +110,21 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         .maximumSessions(1) // 최대허용 가능 세션 수 , -1: 무제한 로그인 세션 허용
         .maxSessionsPreventsLogin(true) // true: 동시 로그인 차단함. false:기존 세션 만료(default)
         .expiredUrl("/expired"); // 세션이 만료된 경우 이동 할 페이지
+    http
+        .exceptionHandling()  // 인증 실패시 예외 처리. 관련 필터: ExceptionTranslationFilter
+        .authenticationEntryPoint(new AuthenticationEntryPoint() {
+          @Override
+          public void commence(HttpServletRequest request, HttpServletResponse response,
+              AuthenticationException authException) throws IOException, ServletException {
+            response.sendRedirect("/login");
+          }
+        })
+        .accessDeniedHandler(new AccessDeniedHandler() {
+          @Override
+          public void handle(HttpServletRequest request, HttpServletResponse response,
+              AccessDeniedException accessDeniedException) throws IOException, ServletException {
+            response.sendRedirect("/denied");
+          }
+        });
   }
 }

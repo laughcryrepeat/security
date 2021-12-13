@@ -12,23 +12,32 @@ public class SecurityController {
     return "home";
   }
 
-  @GetMapping("loginPage")
+  @GetMapping("/loginPage")
   public String loginPage() {
     return "loginPage";
   }
 
-  @GetMapping("user")
+  @GetMapping("/user")
   public String user() {
     return "user";
   }
 
-  @GetMapping("admin")
+  @GetMapping("/admin")
   public String admin() {
     return "admin";
   }
 
-  @GetMapping("admin/pay")
+  @GetMapping("/admin/pay")
   public String adminPay() {
     return "admin/pay";
+  }
+
+  @GetMapping("/login")
+  public String login() {
+    return "login";
+  }
+  @GetMapping("/denied")
+  public String denied() {
+    return "denied";
   }
 }
