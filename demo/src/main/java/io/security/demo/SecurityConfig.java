@@ -15,6 +15,7 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.access.AccessDeniedHandler;
@@ -126,5 +127,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             response.sendRedirect("/denied");
           }
         });
+    // SecurityContext 저장 전략 세팅.
+    //	"MODE_THREADLOCAL" : 스레드의 각자 스레드 로컬 영역에서만.
+    //	"MODE_INHERITABLETHREADLOCAL" : 자식 스레드도 부모 스레드의 인증객체 참조 가능.
+    //	"MODE_GLOBAL" : 어플리케이션 레벨에서 참조 가능.
+    SecurityContextHolder.setStrategyName(SecurityContextHolder.MODE_INHERITABLETHREADLOCAL);
   }
 }
